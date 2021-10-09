@@ -83,7 +83,7 @@ func GetUserPostsEndpoint(response http.ResponseWriter, request *http.Request){
     defer lock.Unlock()
     response.Header().Add("content-type", "application/json")
     params := mux.Vars(request)
-    id, _ := params["id"]
+    id := params["id"]
     var posts []Post
     collection := client.Database("instagram").Collection("posts")
     ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
