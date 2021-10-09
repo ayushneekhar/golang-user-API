@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"sync"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -17,11 +16,9 @@ import (
 )
 
 var client *mongo.Client
-var lock sync.Mutex
 
 func CreateUserEndpoint(response http.ResponseWriter, request *http.Request){
-	lock.Lock()
-    defer lock.Unlock()
+
 	response.Header().Add("content-type", "application/json")
 	var user User
 	json.NewDecoder(request.Body).Decode(&user)
@@ -31,13 +28,12 @@ func CreateUserEndpoint(response http.ResponseWriter, request *http.Request){
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
 	result, _ := collection.InsertOne(ctx, user)
 	json.NewEncoder(response).Encode(result)
-	time.Sleep(1 * time.Second)
+	
 
 }
 
 func CreatePostEndpoint(response http.ResponseWriter, request *http.Request){
-	lock.Lock()
-    defer lock.Unlock()
+
 	response.Header().Add("content-type", "application/json")
 	var post Post
 	json.NewDecoder(request.Body).Decode(&post)
@@ -46,7 +42,7 @@ func CreatePostEndpoint(response http.ResponseWriter, request *http.Request){
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
 	result, _ := collection.InsertOne(ctx, post)
 	json.NewEncoder(response).Encode(result)
-	time.Sleep(1 * time.Second)
+	
 
 }
 
