@@ -29,6 +29,16 @@ func CreateUserEndpoint(response http.ResponseWriter, request *http.Request){
 	json.NewEncoder(response).Encode(result)
 }
 
+func CreatePostEndpoint(response http.ResponseWriter, request *http.Request){
+	response.Header().Add("content-type", "application/json")
+	var post Post
+	json.NewDecoder(request.Body).Decode(&post)
+	collection := client.Database("instagram").Collection("posts")
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	result, _ := collection.InsertOne(ctx, post)
+	json.NewEncoder(response).Encode(result)
+}
+
 func GetUsersEndpoint(response http.ResponseWriter, request *http.Request){
 	response.Header().Add("content-type", "application/json")
 	var users []User
@@ -54,10 +64,40 @@ func GetUsersEndpoint(response http.ResponseWriter, request *http.Request){
 	json.NewEncoder(response).Encode(users)
 }
 
+func GetUserPostsEndpoint(response http.ResponseWriter, request *http.Request){
+    response.Header().Add("content-type", "application/json")
+    params := mux.Vars(request)
+    id, _ := params["id"]
+    var posts []Post
+    collection := client.Database("instagram").Collection("posts")
+    ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	cursor, err := collection.Find(ctx, Post{UserID: id})
+    if err != nil {
+		response.WriteHeader(http.StatusInternalServerError)
+        response.Write([]byte(`{"message": "` + err.Error() + `"}`))
+        return
+    }
+    defer cursor.Close(ctx)
+    for cursor.Next(ctx){
+		var post Post
+        cursor.Decode(&post)
+        posts = append(posts, post)
+    }
+	fmt.Println(posts)
+    if err := cursor.Err(); err != nil {
+		response.WriteHeader(http.StatusInternalServerError)
+        response.Write([]byte(`{"message": "` + err.Error() + `"}`))
+        return
+    }
+    json.NewEncoder(response).Encode(posts)
+
+}
+
 func GetUserEndpoint(response http.ResponseWriter, request *http.Request){
 	response.Header().Add("content-type", "application/json")
 	params := mux.Vars(request)
 	id, _ := primitive.ObjectIDFromHex(params["id"])
+	fmt.Println(id)
 	var user User
 	collection := client.Database("instagram").Collection("users")
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
@@ -67,9 +107,6 @@ func GetUserEndpoint(response http.ResponseWriter, request *http.Request){
 		response.Write([]byte(`{"message": "` + err.Error() + `"}`))
 		return
 	}
-	fmt.Println(user.Password)
-	// match := CheckPasswordHash("ayush2001", user.Password)
-    // fmt.Println("Match:   ", match)
 	json.NewEncoder(response).Encode(user)
 }
 
@@ -91,5 +128,8 @@ func main() {
 	router.HandleFunc("/user", CreateUserEndpoint).Methods("POST")
 	router.HandleFunc("/users", GetUsersEndpoint).Methods("GET")
 	router.HandleFunc("/user/{id}", GetUserEndpoint).Methods("GET")
+
+	router.HandleFunc("/post", CreatePostEndpoint).Methods("POST")
+	router.HandleFunc("/posts/users/{id}", GetUserPostsEndpoint).Methods("GET")
 	http.ListenAndServe(":12345", router)
 }
