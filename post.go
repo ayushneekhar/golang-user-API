@@ -1,6 +1,8 @@
 package main
 
 import (
+	"time"
+
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -9,4 +11,5 @@ type Post struct {
 	UserID 			string 		`json:"userid,omitempty" bson:"userid,omitempty"`
 	Caption         string		`json:"Caption,omitempty" bson:"Caption,omitempty"`
 	ImageURL        string		`json:"ImageURL,omitempty" bson:"ImageURL,omitempty"`
+	PostTime		time.Time	`json:"posttime,omitempty" bson:"posttime,omitempty"` 
 }

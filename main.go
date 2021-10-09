@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -16,8 +17,11 @@ import (
 )
 
 var client *mongo.Client
+var lock sync.Mutex
 
 func CreateUserEndpoint(response http.ResponseWriter, request *http.Request){
+	lock.Lock()
+    defer lock.Unlock()
 	response.Header().Add("content-type", "application/json")
 	var user User
 	json.NewDecoder(request.Body).Decode(&user)
@@ -27,19 +31,28 @@ func CreateUserEndpoint(response http.ResponseWriter, request *http.Request){
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
 	result, _ := collection.InsertOne(ctx, user)
 	json.NewEncoder(response).Encode(result)
+	time.Sleep(1 * time.Second)
+
 }
 
 func CreatePostEndpoint(response http.ResponseWriter, request *http.Request){
+	lock.Lock()
+    defer lock.Unlock()
 	response.Header().Add("content-type", "application/json")
 	var post Post
 	json.NewDecoder(request.Body).Decode(&post)
+	post.PostTime = time.Now();
 	collection := client.Database("instagram").Collection("posts")
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
 	result, _ := collection.InsertOne(ctx, post)
 	json.NewEncoder(response).Encode(result)
+	time.Sleep(1 * time.Second)
+
 }
 
 func GetUsersEndpoint(response http.ResponseWriter, request *http.Request){
+	lock.Lock()
+    defer lock.Unlock()
 	response.Header().Add("content-type", "application/json")
 	var users []User
 	collection := client.Database("instagram").Collection("users")
@@ -62,9 +75,12 @@ func GetUsersEndpoint(response http.ResponseWriter, request *http.Request){
 		return
 	}
 	json.NewEncoder(response).Encode(users)
+	time.Sleep(1 * time.Second)
 }
 
 func GetUserPostsEndpoint(response http.ResponseWriter, request *http.Request){
+	lock.Lock()
+    defer lock.Unlock()
     response.Header().Add("content-type", "application/json")
     params := mux.Vars(request)
     id, _ := params["id"]
@@ -90,10 +106,12 @@ func GetUserPostsEndpoint(response http.ResponseWriter, request *http.Request){
         return
     }
     json.NewEncoder(response).Encode(posts)
-
+	time.Sleep(1 * time.Second)
 }
 
 func GetUserEndpoint(response http.ResponseWriter, request *http.Request){
+	lock.Lock()
+    defer lock.Unlock()
 	response.Header().Add("content-type", "application/json")
 	params := mux.Vars(request)
 	id, _ := primitive.ObjectIDFromHex(params["id"])
@@ -108,15 +126,22 @@ func GetUserEndpoint(response http.ResponseWriter, request *http.Request){
 		return
 	}
 	json.NewEncoder(response).Encode(user)
+	time.Sleep(1 * time.Second)
 }
 
 func HashPassword(password string) (string, error) {
+	lock.Lock()
+    defer lock.Unlock()
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
+	time.Sleep(1 * time.Second)
     return string(bytes), err
 }
 
 func CheckPasswordHash(password, hash string) bool {
-    err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	lock.Lock()
+    defer lock.Unlock()
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	time.Sleep(1 * time.Second)
     return err == nil
 }
 
