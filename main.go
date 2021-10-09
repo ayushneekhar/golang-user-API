@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -16,6 +17,7 @@ import (
 )
 
 var client *mongo.Client
+var lock sync.Mutex
 
 func CreateUserEndpoint(response http.ResponseWriter, request *http.Request){
 
